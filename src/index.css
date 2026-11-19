@@ -47,3 +47,7 @@ h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted
 .list button.item{display:flex;width:100%;text-align:left;padding:12px 0;border-bottom:1px solid var(--line);align-items:center;gap:10px}
 .empty{text-align:center;color:var(--muted);padding:30px 10px}
 .bar{height:6px;border-radius:3px;background:var(--card-2);overflow:hidden}.bar i{display:block;height:100%;background:var(--train)}
+
+button:focus-visible,input:focus-visible{outline:2px solid var(--train);outline-offset:2px}
+.btn:disabled{opacity:.45;cursor:default}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

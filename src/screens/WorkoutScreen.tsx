@@ -54,6 +54,15 @@ export function WorkoutScreen({ workout, onExit }: { workout: Workout; onExit: (
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const i = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(i); }, []);
 
+  // keep the screen on while logging at the gym
+  useEffect(() => {
+    let lock: { release: () => Promise<void> } | undefined;
+    const get = () => (navigator as any).wakeLock?.request('screen').then((l: typeof lock) => { lock = l; }).catch(() => {});
+    get();
+    const vis = () => document.visibilityState === 'visible' && get();
+    document.addEventListener('visibilitychange', vis);
+    return () => { document.removeEventListener('visibilitychange', vis); lock?.release().catch(() => {}); };
+  }, []);
   const wRef = useRef(w);
   const update = (next: Workout) => { wRef.current = next; setW(next); saveWorkout(next); };
   const patchEx = (ei: number, f: (e: WorkoutExercise) => WorkoutExercise) =>
