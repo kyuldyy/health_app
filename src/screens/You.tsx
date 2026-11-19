@@ -34,6 +34,10 @@ export function You() {
       </div>
       <div className="card row"><span className="grow">Default rest (sec)</span>
         <input className="num" style={{ width: 80 }} inputMode="numeric" value={s.defaultRestSec} onChange={(e) => db.settings.put({ ...s, defaultRestSec: Math.max(0, parseInt(e.target.value) || 0) })} /></div>
+      <h2>Daily macro targets</h2>
+      <div className="card">{(['kcal', 'protein', 'carbs', 'fat'] as const).map((k) => (
+        <div className="row" key={k} style={{ marginBottom: 8 }}><span className="grow">{k === 'kcal' ? 'Calories' : k[0].toUpperCase() + k.slice(1)}</span>
+          <input className="num" style={{ width: 90 }} inputMode="numeric" aria-label={k} value={s.targets![k]} onChange={(e) => db.settings.put({ ...s, targets: { ...s.targets!, [k]: Math.max(0, parseInt(e.target.value) || 0) } })} /></div>))}</div>
       <h2>Exercise progress</h2>
       {!trained.length && <div className="muted small">Finish a workout to see progress here.</div>}
       {(showAll ? trained : trained.slice(0, 5)).map((e) => {

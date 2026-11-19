@@ -12,4 +12,5 @@ npm run build    # type-check and production build
 
 ## Status
 - Milestone 1: workout tracker (done): exercise library, workout logging, set types (W/D/F), supersets, rest timer, per-exercise progress, templates, history, backup/restore.
-- Next: food side (pantry, food search and barcode scan, macros, meal ideas), then Today screen integration.
+- Milestone 2: food side (done): food log with daily macros and targets, pantry, food search (USDA FoodData Central + Open Food Facts), barcode scan (camera where supported, manual entry otherwise), custom foods, saved meals, meal ideas from Claude (user-supplied API key stored on device) and from saved meals the pantry can cover, Today screen macros.
+- Next: polish and hardening (see PR notes).

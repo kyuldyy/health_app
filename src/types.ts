@@ -35,8 +35,25 @@ export interface Template {
   name: string;
   exercises: { exerciseId: number; name: string; sets: number; supersetId?: string; restSec: number }[];
 }
+export interface Targets { kcal: number; protein: number; carbs: number; fat: number }
 export interface Settings {
   key: 'main';
   unit: Unit;
   defaultRestSec: number;
+  targets?: Targets;
+  claudeKey?: string;
 }
+
+export interface Per100 { kcal: number; protein: number; carbs: number; fat: number }
+export interface Food extends Per100 {
+  id?: number;
+  name: string;
+  brand?: string;
+  barcode?: string;
+  servingG?: number; // typical serving in grams
+  source: 'custom' | 'off' | 'usda';
+}
+export interface PantryItem { id?: number; foodId: number; grams: number; expires?: string }
+export type MealSlot = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+export interface LogEntry { id?: number; date: string; slot: MealSlot; foodId: number; name: string; grams: number; kcal: number; protein: number; carbs: number; fat: number }
+export interface Recipe { id?: number; name: string; ingredients: { foodId: number; name: string; grams: number }[]; notes?: string }

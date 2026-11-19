@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, DEFAULT_SETTINGS } from './db';
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
-export const useSettings = () => useLiveQuery(() => db.settings.get('main'), []) ?? DEFAULT_SETTINGS;
+export const useSettings = () => ({ ...DEFAULT_SETTINGS, ...(useLiveQuery(() => db.settings.get('main'), []) ?? {}) });
 
 export function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
   return (

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db';
 import { startWorkout } from './lib/workoutOps';
+import { Food } from './screens/Food';
 import { Today } from './screens/Today';
 import { Train } from './screens/Train';
 import { You } from './screens/You';
@@ -24,7 +25,7 @@ export function App() {
         <div className="screen">
           {tab === 'today' && <Today />}
           {tab === 'train' && <Train />}
-          {tab === 'food' && <><h1>Food</h1><div className="empty">Pantry, food search and meal ideas are coming in the next milestone.</div></>}
+          {tab === 'food' && <Food />}
           {tab === 'you' && <You />}
         </div>
       )}
