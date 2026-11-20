@@ -21,6 +21,7 @@ export interface WorkoutExercise {
   supersetId?: string;
   restSec: number;
   note?: string;
+  prev?: { weight: number; reps: number }[]; // last session's working sets, shown as "Previous"
   sets: SetEntry[];
 }
 export interface Workout {
@@ -42,6 +43,7 @@ export interface Settings {
   defaultRestSec: number;
   targets?: Targets;
   claudeKey?: string;
+  seededTemplates?: boolean;
 }
 
 export interface Per100 { kcal: number; protein: number; carbs: number; fat: number }

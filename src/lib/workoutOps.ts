@@ -19,7 +19,7 @@ export async function makeWorkoutExercise(ex: Exercise, restSec: number, setCoun
   const prev = await lastSets(ex.id!);
   const n = Math.max(setCount, prev.length, 1);
   const sets = Array.from({ length: n }, (_, i) => blankSet({ weight: prev[i]?.weight ?? prev.at(-1)?.weight ?? 0, reps: prev[i]?.reps ?? prev.at(-1)?.reps ?? 0 }));
-  return { id: uid(), exerciseId: ex.id!, name: ex.name, restSec, sets };
+  return { id: uid(), exerciseId: ex.id!, name: ex.name, restSec, prev: prev.map((p) => ({ weight: p.weight, reps: p.reps })), sets };
 }
 
 export async function startWorkout(name = 'Workout', template?: Template, restSec = 90): Promise<number> {

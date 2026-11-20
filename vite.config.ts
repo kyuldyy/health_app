@@ -8,6 +8,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        runtimeCaching: [{ urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/, handler: 'CacheFirst', options: { cacheName: 'fonts', expiration: { maxEntries: 20, maxAgeSeconds: 31536000 } } }],
+      },
       manifest: {
         name: 'Ember', short_name: 'Ember', description: 'Workout and food tracker',
         theme_color: '#11151C', background_color: '#11151C', display: 'standalone', start_url: '.', scope: '.',

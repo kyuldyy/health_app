@@ -34,6 +34,21 @@ export const DEFAULT_SETTINGS: Settings = { key: 'main', unit: 'kg', defaultRest
 export async function initDb() {
   if ((await db.exercises.count()) === 0) await db.exercises.bulkAdd(SEED_EXERCISES);
   if (!(await db.settings.get('main'))) await db.settings.put(DEFAULT_SETTINGS);
+  const st = (await db.settings.get('main'))!;
+  if (!st.seededTemplates) {
+    if ((await db.templates.count()) === 0) {
+      const id = async (n: string) => (await db.exercises.where('name').equals(n).first())?.id;
+      const mk = async (name: string, rest: number, items: [string, number][]) => {
+        const exercises = [];
+        for (const [n, sets] of items) { const eid = await id(n); if (eid) exercises.push({ exerciseId: eid, name: n, sets, restSec: rest }); }
+        await db.templates.add({ name, exercises });
+      };
+      await mk('Push A', 120, [['Bench Press', 4], ['Incline Dumbbell Press', 3], ['Overhead Press', 3], ['Lateral Raise', 3], ['Tricep Pushdown', 3]]);
+      await mk('Pull A', 120, [['Barbell Row', 4], ['Pull-Up', 3], ['Seated Cable Row', 3], ['Face Pull', 3], ['Barbell Curl', 3]]);
+      await mk('Legs', 150, [['Squat', 4], ['Romanian Deadlift', 3], ['Leg Press', 3], ['Leg Curl', 3], ['Calf Raise', 4]]);
+    }
+    await db.settings.put({ ...st, seededTemplates: true });
+  }
 }
 
 export async function exportAll() {

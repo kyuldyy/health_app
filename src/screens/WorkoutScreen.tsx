@@ -3,7 +3,7 @@ import type { SetType, Workout, WorkoutExercise } from '../types';
 import { fmtDuration, fmtWeight, fromDisplay, toDisplay, workoutVolume } from '../lib/stats';
 import { blankSet, finishWorkout, linkSuperset, makeWorkoutExercise, saveAsTemplate, saveWorkout, supersetSlots, unlinkSuperset } from '../lib/workoutOps';
 import { db } from '../db';
-import { Menu, Sheet, useSettings } from '../ui';
+import { Icon, Menu, Sheet, useSettings } from '../ui';
 import { ExercisePicker } from './ExercisePicker';
 import { ExerciseProgress } from './Progress';
 
@@ -14,22 +14,22 @@ const TAGS: { t: SetType; label: string; color: string }[] = [
   { t: 'F', label: 'Failure', color: 'var(--fail)' },
 ];
 
-function RestRing({ endsAt, total, onSkip, onAdjust }: { endsAt: number; total: number; onSkip: () => void; onAdjust: (d: number) => void }) {
+function RestRing({ timer, idleSec, onStart, onSkip, onAdjust }: { timer: { endsAt: number; total: number } | null; idleSec: number; onStart: () => void; onSkip: () => void; onAdjust: (d: number) => void }) {
   const [now, setNow] = useState(Date.now());
-  useEffect(() => { const i = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(i); }, []);
-  const left = Math.max(0, Math.ceil((endsAt - now) / 1000));
-  useEffect(() => { if (left === 0) { navigator.vibrate?.([200, 100, 200]); onSkip(); } }, [left]); // eslint-disable-line
-  const r = 28, c = 2 * Math.PI * r;
+  useEffect(() => { if (!timer) return; const i = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(i); }, [timer]);
+  const left = timer ? Math.max(0, Math.ceil((timer.endsAt - now) / 1000)) : idleSec;
+  useEffect(() => { if (timer && left === 0) { navigator.vibrate?.([200, 100, 200]); onSkip(); } }, [left]); // eslint-disable-line
+  const r = 24, c = 2 * Math.PI * r;
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className="timer" aria-label="Rest timer" onClick={() => setOpen(true)}>
-        <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r={r} fill="none" stroke="var(--card-2)" strokeWidth="4" />
-          <circle cx="32" cy="32" r={r} fill="none" stroke="var(--train)" strokeWidth="4" strokeLinecap="round" strokeDasharray={c}
-            strokeDashoffset={c * (1 - left / total)} transform="rotate(-90 32 32)" /></svg>
-        <span>{fmtDuration(left)}</span>
+      <button className="hring" aria-label="Rest timer" onClick={() => (timer ? setOpen(true) : onStart())} style={{ opacity: timer ? 1 : 0.6 }}>
+        <svg viewBox="0 0 56 56"><circle cx="28" cy="28" r={r} fill="none" stroke="var(--card-2)" strokeWidth="4" />
+          <circle cx="28" cy="28" r={r} fill="none" stroke="var(--train)" strokeWidth="4" strokeLinecap="round" strokeDasharray={c}
+            strokeDashoffset={timer ? c * (1 - left / timer.total) : c} transform="rotate(-90 28 28)" /></svg>
+        <span style={{ color: timer ? 'var(--train)' : 'var(--muted)' }}>{fmtDuration(left)}</span>
       </button>
-      {open && (
+      {open && timer && (
         <Sheet onClose={() => setOpen(false)}>
           <div className="row" style={{ justifyContent: 'center', fontSize: 40, fontWeight: 700 }}>{fmtDuration(left)}</div>
           <div className="row" style={{ marginTop: 12 }}>
@@ -95,15 +95,17 @@ export function WorkoutScreen({ workout, onExit }: { workout: Workout; onExit: (
 
   const elapsed = Math.floor((now - w.startedAt) / 1000);
   const doneSets = w.exercises.flatMap((e) => e.sets).filter((s) => s.done).length;
+  const totalSets = w.exercises.reduce((a, e) => a + e.sets.length, 0);
 
   return (
     <div className="screen">
-      <div className="row">
-        <input className="input grow" style={{ margin: 0, fontWeight: 700 }} aria-label="Workout name" value={w.name} onChange={(e) => update({ ...w, name: e.target.value })} />
-        <button className="btn primary" onClick={finish}>Finish</button>
-      </div>
-      <div className="muted small" style={{ margin: '8px 2px 14px' }}>
-        {fmtDuration(elapsed)} · {doneSets} sets · {fmtWeight(workoutVolume(w), unit)} {unit} volume
+      <div className="hdr" style={{ marginBottom: 14 }}>
+        <div className="grow">
+          <div className="muted small">{fmtDuration(elapsed)} · {doneSets}/{totalSets} sets · {fmtWeight(workoutVolume(w), unit)} {unit}</div>
+          <input aria-label="Workout name" value={w.name} onChange={(e) => update({ ...w, name: e.target.value })} style={{ background: 'none', border: 0, outline: 0, width: '100%', padding: 0, font: '700 36px/1.1 "Barlow Condensed","Arial Narrow",sans-serif' }} />
+        </div>
+        <RestRing timer={timer} idleSec={defaultRestSec} onStart={() => setTimer({ endsAt: Date.now() + defaultRestSec * 1000, total: defaultRestSec })} onSkip={() => setTimer(null)} onAdjust={(d) => timer && setTimer({ endsAt: timer.endsAt + d * 1000, total: Math.max(timer.total + d, 5) })} />
+        <button className="btn go" onClick={finish}>Finish</button>
       </div>
 
       {w.exercises.map((e, ei) => {
@@ -113,6 +115,7 @@ export function WorkoutScreen({ workout, onExit }: { workout: Workout; onExit: (
           <div key={e.id} className={`card ex ${slot ? 'ss' + slot : ''}`}>
             <div className="row">
               <button className="exname grow" style={{ textAlign: 'left' }} onClick={() => setProgress(e)}>{e.name}</button>
+              <button className="iconbtn" aria-label="See progress" onClick={() => setProgress(e)}><Icon name="chart" size={18} /></button>
               <Menu items={[
                 { label: 'See progress', onClick: () => setProgress(e) },
                 ...(ei < w.exercises.length - 1 ? [{ label: 'Create superset with next', onClick: () => update(linkSuperset(w, ei)) }] : []),
@@ -123,20 +126,20 @@ export function WorkoutScreen({ workout, onExit }: { workout: Workout; onExit: (
                 { label: 'Remove exercise', danger: true, onClick: () => update(unlinkAndRemove(w, ei)) },
               ]} />
             </div>
-            <div className="setgrid">
-              <span className="hd">Set</span><span className="hd">{unit}</span><span className="hd">Reps</span><span />
+            <div className="setgrid p">
+              <span className="hd">Set</span><span className="hd">Previous</span><span className="hd">{unit}</span><span className="hd">Reps</span><span />
               {e.sets.map((s, si) => {
                 if (s.type === 'N') n++;
                 return (
-                  <SetRow key={s.id} label={s.type === 'N' ? String(n) : s.type} type={s.type} done={s.done}
+                  <SetRow key={s.id} label={s.type === 'N' ? String(n) : s.type} type={s.type} done={s.done} prev={e.prev?.[si] ? `${fmtWeight(e.prev[si].weight, unit)} × ${e.prev[si].reps}` : '–'}
                     weight={s.weight ? String(Math.round(toDisplay(s.weight, unit) * 10) / 10) : ''} reps={s.reps ? String(s.reps) : ''}
                     onTag={() => setTagFor({ ei, si })} onW={(v) => setField(ei, si, 'weight', v)} onR={(v) => setField(ei, si, 'reps', v)} onToggle={() => toggle(ei, si)} />
                 );
               })}
             </div>
             <div className="row" style={{ marginTop: 10 }}>
-              <button className="btn sm grow" onClick={() => patchEx(ei, (x) => ({ ...x, sets: [...x.sets, blankSet({ weight: x.sets.at(-1)?.weight ?? 0, reps: x.sets.at(-1)?.reps ?? 0 })] }))}>+ Add set</button>
-              {e.sets.length > 1 && <button className="btn sm" aria-label="Remove last set" onClick={() => patchEx(ei, (x) => ({ ...x, sets: x.sets.slice(0, -1) }))}>−</button>}
+              <button className="addset grow" style={{ marginTop: 0 }} onClick={() => patchEx(ei, (x) => ({ ...x, sets: [...x.sets, blankSet({ weight: x.sets.at(-1)?.weight ?? 0, reps: x.sets.at(-1)?.reps ?? 0 })] }))}>+ Add set</button>
+              {e.sets.length > 1 && <button className="iconbtn" aria-label="Remove last set" onClick={() => patchEx(ei, (x) => ({ ...x, sets: x.sets.slice(0, -1) }))}>−</button>}
             </div>
           </div>
         );
@@ -172,18 +175,18 @@ export function WorkoutScreen({ workout, onExit }: { workout: Workout; onExit: (
         </Sheet>
       )}
       {progress && <ExerciseProgress exerciseId={progress.exerciseId} name={progress.name} onClose={() => setProgress(null)} />}
-      {timer && timer.total > 0 && <RestRing endsAt={timer.endsAt} total={timer.total} onSkip={() => setTimer(null)} onAdjust={(d) => setTimer({ endsAt: timer.endsAt + d * 1000, total: Math.max(timer.total + d, 5) })} />}
     </div>
   );
 }
 
-function SetRow(p: { label: string; type: SetType; done: boolean; weight: string; reps: string; onTag: () => void; onW: (v: string) => void; onR: (v: string) => void; onToggle: () => void }) {
+function SetRow(p: { label: string; type: SetType; done: boolean; prev: string; weight: string; reps: string; onTag: () => void; onW: (v: string) => void; onR: (v: string) => void; onToggle: () => void }) {
   return (
     <>
       <button className={`setno ${p.type}`} aria-label="Set type" onClick={p.onTag}>{p.label}</button>
-      <input className="num" inputMode="decimal" placeholder="0" aria-label="Weight" value={p.weight} onChange={(e) => p.onW(e.target.value)} />
-      <input className="num" inputMode="numeric" placeholder="0" aria-label="Reps" value={p.reps} onChange={(e) => p.onR(e.target.value)} />
-      <button className={'chk' + (p.done ? ' on' : '')} aria-label="Complete set" onClick={p.onToggle}>✓</button>
+      <span className="prev">{p.prev}</span>
+      <input className="num" inputMode="decimal" placeholder="0" aria-label="Weight" value={p.weight} onChange={(e) => p.onW(e.target.value)} style={p.done ? { background: 'rgba(60,199,154,.14)' } : undefined} />
+      <input className="num" inputMode="numeric" placeholder="0" aria-label="Reps" value={p.reps} onChange={(e) => p.onR(e.target.value)} style={p.done ? { background: 'rgba(60,199,154,.14)' } : undefined} />
+      <button className={'chk' + (p.done ? ' on' : '')} aria-label="Complete set" aria-pressed={p.done} onClick={p.onToggle}><Icon name="check" size={18} /></button>
     </>
   );
 }
