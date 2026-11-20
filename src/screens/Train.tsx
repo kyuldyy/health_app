@@ -19,7 +19,7 @@ export function Train() {
       {templates.map((t) => (
         <div className="card row" key={t.id}>
           <button className="grow" style={{ textAlign: 'left' }} onClick={() => startWorkout(t.name, t, defaultRestSec)}>
-            <b>{t.name}</b><div className="muted small">{t.exercises.map((e) => e.name).join(', ')}</div>
+            <div className="big" style={{ fontSize: 24 }}>{t.name}</div><div className="muted small">{t.exercises.length} exercises · {t.exercises.map((e) => e.name).slice(0, 3).join(', ')}{t.exercises.length > 3 ? '…' : ''}</div>
           </button>
           <button className="btn sm danger" onClick={() => confirm('Delete template?') && db.templates.delete(t.id!)}>Delete</button>
         </div>
@@ -29,7 +29,7 @@ export function Train() {
       {history.map((w) => (
         <div className="card" key={w.id}>
           <button className="row" style={{ width: '100%', textAlign: 'left' }} onClick={() => setOpen(open === w.id ? null : w.id!)}>
-            <div className="grow"><b>{w.name}</b><div className="muted small">{new Date(w.startedAt).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · {Math.round(((w.finishedAt ?? w.startedAt) - w.startedAt) / 60000)} min · {fmtWeight(workoutVolume(w), unit)} {unit}</div></div>
+            <div className="grow"><div className="big" style={{ fontSize: 22 }}>{w.name}</div><div className="muted small">{new Date(w.startedAt).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · {Math.round(((w.finishedAt ?? w.startedAt) - w.startedAt) / 60000)} min · {fmtWeight(workoutVolume(w), unit)} {unit}</div></div>
           </button>
           {open === w.id && (
             <div style={{ marginTop: 8 }}>

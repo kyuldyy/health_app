@@ -39,7 +39,7 @@ function Scanner({ onCode, onClose }: { onCode: (c: string) => void; onClose: ()
   }, []); // eslint-disable-line
   return (
     <div>
-      {supported && !err && <video ref={video} playsInline muted style={{ width: '100%', borderRadius: 14, background: '#000', aspectRatio: '4/3', objectFit: 'cover' }} />}
+      {supported && !err && <div className="vf"><video ref={video} playsInline muted /><div className="frame" /><div className="scan" /></div>}
       {(!supported || err) && <p className="muted small">{err || 'Camera scanning isn’t supported in this browser. Type the barcode instead.'}</p>}
       <div className="row" style={{ marginTop: 10 }}>
         <input className="input grow" style={{ margin: 0 }} inputMode="numeric" placeholder="Barcode number" value={manual} onChange={(e) => setManual(e.target.value)} />
@@ -66,9 +66,9 @@ function CustomForm({ initial, onSave, onCancel }: { initial?: string; onSave: (
   );
 }
 
-export function FoodPicker({ onPick, onClose }: { onPick: (f: Food) => void; onClose: () => void }) {
+export function FoodPicker({ onPick, onClose, startScan }: { onPick: (f: Food) => void; onClose: () => void; startScan?: boolean }) {
   const [q, setQ] = useState('');
-  const [mode, setMode] = useState<'search' | 'scan' | 'custom'>('search');
+  const [mode, setMode] = useState<'search' | 'scan' | 'custom'>(startScan ? 'scan' : 'search');
   const [online, setOnline] = useState<Food[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');

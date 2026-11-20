@@ -4,7 +4,7 @@ import { db } from '../db';
 import type { Food, MealSlot, Recipe } from '../types';
 import { addMacros, macrosFor, r0, remaining, sumLog, todayStr, ZERO } from '../lib/macros';
 import { askClaude, buildPrompt, recipesFromPantry, type MealIdea } from '../lib/mealIdeas';
-import { useSettings } from '../ui';
+import { Icon, useSettings } from '../ui';
 import { addLogEntry } from './Food';
 
 export function MealIdeas() {
@@ -33,10 +33,16 @@ export function MealIdeas() {
 
   return (
     <>
-      <div className="card small"><b>Left today:</b> {r0(left.kcal)} kcal · P {r0(left.protein)} · C {r0(left.carbs)} · F {r0(left.fat)}</div>
+      <div className="card">
+        <div className="eyebrow" style={{ margin: 0 }}>Left for today</div>
+        <div className="row" style={{ justifyContent: 'space-between', marginTop: 6 }}>
+          {([['kcal', left.kcal, 'var(--fg)', ''], ['protein', left.protein, 'var(--protein)', 'g'], ['carbs', left.carbs, 'var(--carbs)', 'g'], ['fat', left.fat, 'var(--fat)', 'g']] as const).map(([l, v, c, u]) => (
+            <div key={l} style={{ textAlign: 'center' }}><div className="big" style={{ color: c }}>{r0(v).toLocaleString()}{u}</div><div className="muted small">{l}</div></div>))}
+        </div>
+      </div>
       <div>{(['Breakfast', 'Lunch', 'Dinner', 'Snack'] as MealSlot[]).map((x) => <button key={x} className={'chip' + (slot === x ? ' on' : '')} onClick={() => setSlot(x)}>{x}</button>)}</div>
 
-      <h2>Ask Claude</h2>
+      <div className="row" style={{ margin: '18px 0 8px' }}><span style={{ color: 'var(--food)' }}><Icon name="spark" size={16} /></span><span className="link grow">From your pantry</span></div>
       {!s.claudeKey ? (
         <div className="card">
           <p className="small muted" style={{ marginTop: 0 }}>Paste an Anthropic API key to get AI meal ideas from your pantry and remaining macros. It is stored only on this device and sent only to Anthropic.</p>
@@ -45,7 +51,7 @@ export function MealIdeas() {
         </div>
       ) : (
         <>
-          <button className="btn primary block" disabled={busy || !pantry.length} onClick={ask}>{busy ? 'Thinking…' : 'Suggest meals from my pantry'}</button>
+          <button className="btn go block" disabled={busy || !pantry.length} onClick={ask}>{busy ? 'Thinking…' : 'Suggest meals from my pantry'}</button>
           {!pantry.length && <p className="muted small">Add items to your pantry first.</p>}
           <button className="btn sm" style={{ marginTop: 8 }} onClick={() => db.settings.put({ ...s, claudeKey: undefined })}>Remove API key</button>
         </>
